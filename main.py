@@ -24,6 +24,17 @@ class UserInterface:
             print("Exiting the game")
             sys.exit(1)
 
+    @staticmethod
+    def bet(holdings):
+        bet_selection = [50, 100, 200, 500]
+        for bet_amount in bet_selection:
+            if holdings < bet_amount:
+                bet_selection.remove(bet_amount)
+
+
+
+
+
 
 class GameLogic:
     def __init__(self):
@@ -48,7 +59,8 @@ class GameLogic:
         self.game_data = {"player": {"score": 0, "money": 1000,
                                      "cards": []},
                           "dealer": {"score": 0, "money": 0,
-                                     "cards": []}}
+                                     "cards": []},
+                          "round": {"number": 0, "line": 0}}
 
     def get_random_card(self):
         """Select random card"""
@@ -59,38 +71,40 @@ class GameLogic:
     def get_user_card(self):
         user_card = self.get_random_card()
         self.game_data["player"]["cards"].append(user_card)
-        print(self.game_data)
+        #print(self.game_data)
         return user_card
 
     def get_dealer_card(self):
         dealer_card = self.get_random_card()
         self.game_data["dealer"]["cards"].append(dealer_card)
-        print(self.game_data)
+        #print(self.game_data)
         return dealer_card
 
     def calculate_score(self, for_whom):
         score = 0
         for card in self.game_data[for_whom]["cards"]:
             card_data = card.split("_")
-            card_name = card[0]
+            card_name = card_data[0]
             try:
-                if card_name.is_integer():
-                    score = score + card_name
-            except AttributeError:
-                if card_name == "ace" and score < 21:
+                int_card = int(card_name)
+                score = score + int_card
+            except ValueError:
+                if card_name == "ace":
                     score = score + 11
-                elif card_name == "ace" and score > 21:
-                    score = score + 1
+                    if score > 21:
+                        score = score - 10
                 else:
                     score = score + 10
         self.game_data[for_whom]["score"] = score
-        print(f"after calc {self.game_data}")
+        #print(f"after calc {self.game_data}")
+
 
 
 if __name__ == '__main__':
     game = GameLogic()
     ui = UserInterface
-    ui.simple_yes_no()
+    #ui.simple_yes_no()
+    #game.deal()
     game.get_user_card()
     game.calculate_score("player")
     game.get_user_card()
@@ -99,3 +113,4 @@ if __name__ == '__main__':
     game.calculate_score("dealer")
     game.get_dealer_card()
     game.calculate_score("dealer")
+    print(game.game_data)
