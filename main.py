@@ -15,7 +15,7 @@ class UserInterface:
         while answer not in simple_selection:
             print(f"1) Yes\n2) No\n")
             try:
-                user_answer = int(input(">>>"))
+                user_answer = int(input(">>> "))
                 answer = simple_selection[user_answer - 1]
             except:
                 print("Please select one from above...")
@@ -25,16 +25,38 @@ class UserInterface:
             sys.exit(1)
 
     @staticmethod
-    def bet(holdings):
+    def make_bet(holdings):
+        print("Please select bet amount")
         bet_selection = [50, 100, 200, 500]
         for bet_amount in bet_selection:
             if holdings < bet_amount:
                 bet_selection.remove(bet_amount)
+        bet_selection_len = len(bet_selection) + 1
+        user_answer = 10
+        while user_answer > bet_selection_len:
+            amount_index = 0
+            for amount in bet_selection:
+                amount_index = amount_index + 1
+                print(f"{amount_index}) {amount}$")
+            next_index = amount_index + 1
+            print(f"{next_index}) Quit")
+            user_answer = int(input(">>> "))
+        try:
+            return bet_selection[user_answer - 1]
+        except IndexError:
+            print("You choose quit")
+            sys.exit(1)
 
+    @staticmethod
+    def result(result):
+        print(f'{result.upper()}!')
 
-
-
-
+    @staticmethod
+    def stand_or_hit():
+        stand_or_hit_select = ["stand", "hit"]
+        answer = None
+        while answer not in stand_or_hit_select:
+            print(f"1) {stand_or_hit_select[0]}\n2) {stand_or_hit_select[1]}")
 
 class GameLogic:
     def __init__(self):
@@ -56,11 +78,11 @@ class GameLogic:
             "6_of_clubs", "5_of_clubs", "4_of_clubs", "3_of_clubs",
             "2_of_clubs"
         ]
-        self.game_data = {"player": {"score": 0, "money": 1000,
-                                     "cards": []},
-                          "dealer": {"score": 0, "money": 0,
-                                     "cards": []},
-                          "round": {"number": 0, "line": 0}}
+        self.data = {"player": {"score": 0, "money": 1000,
+                                "cards": [], "win": False},
+                     "dealer": {"score": 0, "money": 0,
+                                "cards": [], "win": False},
+                     "round": {"number": 0, "bet": 0}}
 
     def get_random_card(self):
         """Select random card"""
@@ -68,21 +90,14 @@ class GameLogic:
         self.deck.remove(random_card)
         return random_card
 
-    def get_user_card(self):
-        user_card = self.get_random_card()
-        self.game_data["player"]["cards"].append(user_card)
-        #print(self.game_data)
-        return user_card
-
-    def get_dealer_card(self):
-        dealer_card = self.get_random_card()
-        self.game_data["dealer"]["cards"].append(dealer_card)
-        #print(self.game_data)
-        return dealer_card
+    def get_card(self, for_whom):
+        card = self.get_random_card()
+        self.data[for_whom]["cards"].append(card)
+        return card
 
     def calculate_score(self, for_whom):
         score = 0
-        for card in self.game_data[for_whom]["cards"]:
+        for card in self.data[for_whom]["cards"]:
             card_data = card.split("_")
             card_name = card_data[0]
             try:
@@ -95,9 +110,34 @@ class GameLogic:
                         score = score - 10
                 else:
                     score = score + 10
-        self.game_data[for_whom]["score"] = score
-        #print(f"after calc {self.game_data}")
+        self.data[for_whom]["score"] = score
 
+    def increase_round(self):
+        previous_round = self.data["round"]["number"]
+        self.data["round"]["number"] = previous_round + 1
+
+    def bet(self, bet):
+        previous_player_money = self.data["player"]["money"]
+        self.data["player"]["money"] = previous_player_money - bet
+        self.data["round"]["bet"] = bet
+
+    def reset_round(self):
+        print(f"Reset round here")
+        self.data["player"]["score"] = 0
+        self.data["dealer"]["score"] = 0
+        self.data["round"]["bet"] = 0
+        self.data["player"]["cards"] = []
+        self.data["dealer"]["cards"] = []
+        self.data["player"]["win"] = False
+        self.data["dealer"]["win"] = False
+
+
+
+    def check_blackjack(self, for_whom) -> bool:
+        if self.data[for_whom]["score"] == 21:
+            self.data[for_whom]["win"] = True
+            return True
+        return False
 
 
 if __name__ == '__main__':
@@ -105,12 +145,37 @@ if __name__ == '__main__':
     ui = UserInterface
     #ui.simple_yes_no()
     #game.deal()
-    game.get_user_card()
-    game.calculate_score("player")
-    game.get_user_card()
-    game.calculate_score("player")
-    game.get_dealer_card()
-    game.calculate_score("dealer")
-    game.get_dealer_card()
-    game.calculate_score("dealer")
-    print(game.game_data)
+    def round(game):
+        bet = ui.make_bet(game.data["player"]["money"])
+        game.bet(bet)
+        game.increase_round()
+        game.get_card("player")
+        game.calculate_score("player")
+        game.get_card("player")
+        game.calculate_score("player")
+        game.get_card("dealer")
+        game.calculate_score("dealer")
+        game.get_card("dealer")
+        game.calculate_score("dealer")
+
+    def is_blackjack(game) -> bool:
+        if game.check_blackjack("player") and game.check_blackjack("dealer"):
+            ui.result("draw")
+            return True
+        elif game.check_blackjack("player"):
+            ui.result("win")
+            return True
+        elif game.check_blackjack("dealer"):
+            ui.result("loose")
+            return True
+        return False
+
+
+    round(game)
+    print(game.data)
+
+    if is_blackjack(game):
+        game.reset_round()
+    #ui.stand_or_hit()
+
+    print(game.data)
