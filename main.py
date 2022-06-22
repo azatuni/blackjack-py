@@ -52,11 +52,16 @@ class UserInterface:
         print(f'{result.upper()}!')
 
     @staticmethod
-    def stand_or_hit():
-        stand_or_hit_select = ["stand", "hit"]
+    def stand_or_hit() -> str:
+        stand_or_hit_select = {1: "stand", 2: "hit"}
         answer = None
-        while answer not in stand_or_hit_select:
-            print(f"1) {stand_or_hit_select[0]}\n2) {stand_or_hit_select[1]}")
+
+        while answer not in stand_or_hit_select.keys():
+            for key, value in stand_or_hit_select.items():
+                print(f"{key}) {value}")
+            answer = int(input(">>> "))
+            #print(f"1) {stand_or_hit_select[0]}\n2) {stand_or_hit_select[1]}")
+            return stand_or_hit_select[answer]
 
 class GameLogic:
     def __init__(self):
@@ -79,9 +84,11 @@ class GameLogic:
             "2_of_clubs"
         ]
         self.data = {"player": {"score": 0, "money": 1000,
-                                "cards": [], "win": False},
+                                "cards": [], "win": False,
+                                "loose": False, "hide_second_card": False},
                      "dealer": {"score": 0, "money": 0,
-                                "cards": [], "win": False},
+                                "cards": [], "win": False,
+                                "loose": False, "hide_second_card": True},
                      "round": {"number": 0, "bet": 0}}
 
     def get_random_card(self):
@@ -139,6 +146,12 @@ class GameLogic:
             return True
         return False
 
+    def check_loose(self, for_whom) -> bool:
+        if self.data[for_whom]["score"] > 21:
+            self.data[for_whom]["win"] = False
+            return True
+        return False
+
 
 if __name__ == '__main__':
     game = GameLogic()
@@ -161,21 +174,49 @@ if __name__ == '__main__':
     def is_blackjack(game) -> bool:
         if game.check_blackjack("player") and game.check_blackjack("dealer"):
             ui.result("draw")
+            game.reset_round()
             return True
         elif game.check_blackjack("player"):
             ui.result("win")
+            game.reset_round()
             return True
         elif game.check_blackjack("dealer"):
             ui.result("loose")
+            game.reset_round()
             return True
         return False
 
+    def is_loose(game, for_whom):
+        if game.check_loose(for_whom):
+            ui.result("loose")
+            game.reset_round()
+            return True
+        return False
 
     round(game)
     print(game.data)
+    is_blackjack(game)
 
-    if is_blackjack(game):
-        game.reset_round()
+
+
     #ui.stand_or_hit()
+    action = "hit"
+    while action == "hit":
+        action = ui.stand_or_hit()
+        if action == "hit":
+            game.get_card("player")
+            game.calculate_score("player")
+            print(game.data)
+            if is_blackjack(game):
+                break
+                action = "stand"
+
+            if is_loose(game, "player"):
+                break
+                action = "stand"
+            print(game.data)
+            print(action)
+
+        #if game.check_loose("player")
 
     print(game.data)
