@@ -25,7 +25,10 @@ class UserInterface:
             sys.exit(1)
 
     @staticmethod
-    def make_bet(holdings):
+    def make_bet(holdings) -> int:
+        """
+        If no bet returns 0
+        """
         print("Please select bet amount")
         bet_selection = [50, 100, 200, 500]
         for bet_amount in bet_selection:
@@ -44,8 +47,9 @@ class UserInterface:
         try:
             return bet_selection[user_answer - 1]
         except IndexError:
-            print("You choose quit")
-            sys.exit(1)
+            return 0
+#            print("You choose quit")
+#            sys.exit(1)
 
     @staticmethod
     def result(result):
@@ -62,6 +66,11 @@ class UserInterface:
             answer = int(input(">>> "))
             #print(f"1) {stand_or_hit_select[0]}\n2) {stand_or_hit_select[1]}")
             return stand_or_hit_select[answer]
+
+    @staticmethod
+    def quit_game():
+        print("You choose quit game")
+        sys.exit(0)
 
 class GameLogic:
     def __init__(self):
@@ -89,7 +98,7 @@ class GameLogic:
                      "dealer": {"score": 0, "money": 0,
                                 "cards": [], "win": False,
                                 "loose": False, "hide_second_card": True},
-                     "round": {"number": 0, "bet": 0}}
+                     "round": {"number": 0, "bet": 0, "next_round": True}}
 
     def get_random_card(self):
         """Select random card"""
@@ -160,6 +169,8 @@ if __name__ == '__main__':
     #game.deal()
     def round(game):
         bet = ui.make_bet(game.data["player"]["money"])
+        if bet == 0:
+            ui.quit_game()
         game.bet(bet)
         game.increase_round()
         game.get_card("player")
@@ -169,7 +180,7 @@ if __name__ == '__main__':
         game.get_card("dealer")
         game.calculate_score("dealer")
         game.get_card("dealer")
-        game.calculate_score("dealer")
+        #game.calculate_score("dealer")
 
     def is_blackjack(game) -> bool:
         if game.check_blackjack("player") and game.check_blackjack("dealer"):
@@ -204,7 +215,8 @@ if __name__ == '__main__':
     while action == "hit":
         action = ui.stand_or_hit()
         if action == "hit":
-            game.get_card("player")
+            new_card = game.get_card("player")
+            print(f"You got a {new_card}")
             game.calculate_score("player")
             print(game.data)
             if is_blackjack(game):
